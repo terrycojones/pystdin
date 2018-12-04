@@ -52,16 +52,16 @@ $ pystdin.py -p
 # Change the second field to '*' and print.
 $ pystdin.py -p -e 'F[1] = "*"'
 
-# Print the first 5 fields, leaving out lines with fewer fields.
+# Print the first 5 fields of each line.
 $ pystdin.py -p -e 'F = F[:5]'
 
-# Print only the third field.
+# Print only the third field of each line.
 $ pystdin.py -e 'print(F[2])'
 
 # Print only the third field, or the whole line if an IndexError occurs.
 $ pystdin.py -e 'print(F[2])' --indexError print
 
-# Same, but skipping lines with less fields.
+# As above, but skipping lines with fewer fields.
 $ pystdin.py -e 'print(F[2])' --indexError pass
 
 # Add the first fields and print their sum.
