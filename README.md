@@ -66,44 +66,12 @@ $ pystdin.py -e 'print(F[2])'
 $ pystdin.py --begin 'x = 0' --loop 'x += int(F[0])' --end 'print(x)'
 ```
 
-## Automatically printing each line
-
-The `--print` (or `-p`) option enables the automatic printing at the end of
-the loop, as in perl.  If line splitting is on (the default), the `F`
-variable is printed, joined by the value of the `--joinStr` (or `-j`)
-option (default is a single space). If line splitting is off (via
-`--noSplit` (or `--ns`)), the `line` variable is printed (with a trailing
-newline, unless `--noChomp` was used).
-
-### Dry run
-
-As above, use `--dryRun` (or `-n`) to not run the code, just print what
-would be run. E.g.,
-
-```sh
-$ pystdin.py -n -p -e 'F = F[:5]'
-import sys
-
-# No initial code.
-
-for line in sys.stdin:
-    line = line.rstrip('\r\n')
-    F = line.split(None, -1)
-    try:
-        F = F[:5]
-    except IndexError:
-        raise
-    print(' '.join(F))
-
-# No final code.
-```
-
-### Splitting input lines
+## Splitting input lines
 
 Use `--splitStr` to set the string that fields are split with at the start
 of the loop.
 
-#### Index errors
+### Index errors
 
 Because it will be common to want to work with automatically split input
 lines and because you may not want to check if lines have the required
@@ -131,6 +99,15 @@ for line in sys.stdin:
 
 # No final code.
 ```
+
+## Automatically printing each line
+
+The `--print` (or `-p`) option enables the automatic printing at the end of
+the loop, as in perl.  If line splitting is on (the default), the `F`
+variable is printed, joined by the value of the `--joinStr` (or `-j`)
+option (default is a single space). If line splitting is off (via
+`--noSplit` (or `--ns`)), the `line` variable is printed (with a trailing
+newline, unless `--noChomp` was used).
 
 ### Joining the output fields
 
@@ -236,7 +213,7 @@ for line in sys.stdin:
 Of course by the stage you get to something that complicated you might just
 want to write a Python script instead of using the command line.
 
-### Emulating cat
+## Emulating cat for fun and profit
 
 This is a more accurate emulation of `cat` (just to show you how to turn
 off some of the processing):
