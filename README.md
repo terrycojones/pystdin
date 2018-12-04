@@ -69,7 +69,9 @@ $ pystdin.py --begin 'x = 0' --loop 'x += int(F[0])' --end 'print(x)'
 ## Splitting input lines
 
 Use `--splitStr` to set the string that fields are split with at the start
-of the loop.
+of the loop.  The input lines are split into fields in a variable named `F`
+(use `--splitVar` to change this), as in perl.  Use `--noSplit` (or `--ns`)
+to turn off auto-splitting.
 
 ### Index errors
 
