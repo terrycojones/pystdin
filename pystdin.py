@@ -37,7 +37,7 @@ parser.add_argument(
 parser.add_argument(
     '--joinStr', default="' '", metavar='STRING',
     help=('The string to join fields on before printing at the end of the '
-          'loop (ignored if --noPrint is used).'))
+          'loop (ignored if --print is not used).'))
 
 parser.add_argument(
     '--indexError', default='raise',
@@ -60,8 +60,8 @@ parser.add_argument(
     help='Print the code that would be run, without running it.')
 
 parser.add_argument(
-    '--noPrint', default=False, action='store_true',
-    help=('Do not print the re-joined (by the --joinString string) '
+    '--print', '-p', default=False, action='store_true',
+    help=('Print the re-joined (using the --joinString string) '
           'split input after processing each line.'))
 
 parser.add_argument(
@@ -70,8 +70,8 @@ parser.add_argument(
           'from each input line.'))
 
 parser.add_argument(
-    '--noSplit', default=False, action='store_true',
-    help='Do not split input lines on whitespace.  Implies --noPrint.')
+    '--noSplit', '--ns', default=False, action='store_true',
+    help='Do not split input lines on whitespace.')
 
 parser.add_argument(
     '--noAutoIndent', default=False, action='store_true',
@@ -83,9 +83,6 @@ parser.add_argument(
     help='The number of spaces of indentation to use.')
 
 args = parser.parse_args()
-
-if args.noSplit:
-    args.noPrint = True
 
 indentStr = ' ' * args.indent
 
@@ -124,9 +121,17 @@ initialCode = makeCode(args.begin, args.indent) or '# No initial code.'
 loopCode = makeCode(args.loop or ['pass'], args.indent, args.indent * 2)
 endCode = makeCode(args.end, args.indent) or '# No final code.'
 
-print_ = '%s# No print.' % indentStr if args.noPrint else (
-    "%sprint(%s.join(%s))" %
-    (indentStr, args.joinStr, args.splitVar))
+if args.print:
+    if args.noSplit:
+        if args.noChomp:
+            print_ = '%sprint(%s, end="")' % (indentStr, args.lineVar)
+        else:
+            print_ = '%sprint(%s)' % (indentStr, args.lineVar)
+    else:
+        print_ = '%sprint(%s.join(%s))' % (
+            indentStr, args.joinStr, args.splitVar)
+else:
+    print_ = '%s# No print.' % indentStr
 
 split = '%s# No split.' % indentStr if args.noSplit else (
     '%s%s = %s.split(%s, %s)' %
