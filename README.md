@@ -71,9 +71,9 @@ $ pystdin.py --begin 'x = 0' -e 'x += int(F[0])' --end 'print(x)'
 The `--print` (or `-p`) option enables the automatic printing at the end of
 the loop, as in perl.  If line splitting is on (the default), the `F`
 variable is printed, joined by the value of the `--joinStr` option (default
-is a single space). If line splitting is off (via `--ns` or `noSplit`), the
-`line` variable is printed (with a trailing `\n` unless `--noChomp` is
-used).
+is a single space). If line splitting is off (via `--noSplit` (or `--ns`)),
+the `line` variable is printed (with a trailing newline, unless `--noChomp`
+was used).
 
 ### Dry run
 
