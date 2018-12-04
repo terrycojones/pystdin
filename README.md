@@ -44,7 +44,7 @@ may be given to these options.
 Use `+` and `-` as arguments to manually increase or decrease indentation
 (but see below for indentation detection).
 
-The `-n` (or `--dryRun`) option used above tells `pystdin.py` to just print
+The `--dryRun` (or `-n`) option used above tells `pystdin.py` to just print
 the code it would run and then exit without running the code.
 
 ## Trivial examples
@@ -63,21 +63,21 @@ $ pystdin.py -p -e 'F = F[:5]'
 $ pystdin.py -e 'print(F[2])'
 
 # Add the first fields and print their sum.
-$ pystdin.py --begin 'x = 0' -e 'x += int(F[0])' --end 'print(x)'
+$ pystdin.py --begin 'x = 0' --loop 'x += int(F[0])' --end 'print(x)'
 ```
 
 ## Automatically printing each line
 
 The `--print` (or `-p`) option enables the automatic printing at the end of
 the loop, as in perl.  If line splitting is on (the default), the `F`
-variable is printed, joined by the value of the `--joinStr` option (default
-is a single space). If line splitting is off (via `--noSplit` (or `--ns`)),
-the `line` variable is printed (with a trailing newline, unless `--noChomp`
-was used).
+variable is printed, joined by the value of the `--joinStr` (or `-j`)
+option (default is a single space). If line splitting is off (via
+`--noSplit` (or `--ns`)), the `line` variable is printed (with a trailing
+newline, unless `--noChomp` was used).
 
 ### Dry run
 
-As above, use `-n` (or `--dryRun`) to not run the code, just print what
+As above, use `--dryRun` (or `-n`) to not run the code, just print what
 would be run. E.g.,
 
 ```sh
@@ -286,7 +286,8 @@ optional arguments:
   --splitVar VARIABLE-NAME
                         The name of the variable to split input lines into
                         (ignored if --noSplit is used) (default: F)
-  --joinStr STRING      The string to join fields on before printing at the
+  --joinStr STRING, -j STRING
+                        The string to join fields on before printing at the
                         end of the loop (ignored if --print is not used).
                         (default: ' ')
   --indexError {pass,raise,print}
