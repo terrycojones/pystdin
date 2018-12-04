@@ -35,7 +35,7 @@ parser.add_argument(
           'if --noSplit is used)'))
 
 parser.add_argument(
-    '--joinStr', default="' '", metavar='STRING',
+    '--joinStr', '-j', default="' '", metavar='STRING',
     help=('The string to join fields on before printing at the end of the '
           'loop (ignored if --print is not used).'))
 
@@ -118,7 +118,8 @@ def makeCode(commands, indentInc, initialIndent=0):
 
 
 initialCode = makeCode(args.begin, args.indent) or '# No initial code.'
-loopCode = makeCode(args.loop or ['pass'], args.indent, args.indent * 2)
+loopCode = makeCode(args.loop or ['# No loop code.'], args.indent,
+                    args.indent * (1 if args.indexError == 'raise' else 2))
 endCode = makeCode(args.end, args.indent) or '# No final code.'
 
 if args.print:
@@ -145,8 +146,23 @@ chomp = '%s# No chomp.' % indentStr if args.noChomp else (
 indexError = ('print(%s)' % args.lineVar
               if args.indexError == 'print' else args.indexError)
 
+if args.indexError == 'raise':
+    template = '''\
+import sys
 
-code = '''\
+%(initialCode)s
+
+for %(var)s in sys.stdin:
+%(chomp)s
+%(split)s
+%(loopCode)s
+%(print)s
+
+%(endCode)s
+'''
+
+else:
+    template = '''\
 import sys
 
 %(initialCode)s
@@ -161,7 +177,9 @@ for %(var)s in sys.stdin:
 %(print)s
 
 %(endCode)s
-''' % {
+'''
+
+code = template % {
     'initialCode': initialCode,
     'var': args.lineVar,
     'chomp': chomp,

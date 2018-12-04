@@ -53,20 +53,14 @@ the code it would run and then exit without running the code.
 # Emulate cat (more or less - see below)
 $ pystdin.py -p
 
-# Change the second field to '*' and print.
+# Change the second field to '*' and print all fields space-separated.
 $ pystdin.py -p -e 'F[1] = "*"'
 
 # Print the first 5 fields of each line.
 $ pystdin.py -p -e 'F = F[:5]'
 
-# Print only the third field of each line.
+# Print only the third field of each line (see IndexErrors below).
 $ pystdin.py -e 'print(F[2])'
-
-# Print only the third field, or the whole line if an IndexError occurs.
-$ pystdin.py -e 'print(F[2])' --indexError print
-
-# As above, but skipping lines with fewer fields.
-$ pystdin.py -e 'print(F[2])' --indexError pass
 
 # Add the first fields and print their sum.
 $ pystdin.py --begin 'x = 0' -e 'x += int(F[0])' --end 'print(x)'
@@ -108,14 +102,19 @@ for line in sys.stdin:
 Use `--splitStr` to set the string that fields are split with at the start
 of the loop.
 
-### Joining the output fields
+#### Index errors
 
-Use `--joinStr` to set the string that fields are joined with before
-printing (assuming `-p` is given). E.g.:
+Because it will be common to want to work with automatically split input
+lines and because you may not want to check if lines have the required
+number of fields for proper processing, you can use `--indexError`
+to `pass` or `print` the offending lines. E.g.:
 
 ```sh
-# Split the first two fields on whitespace, print them TAB-separated.
-$ pystdin.py -n -p --joinStr "'\\t'" -e 'F = F[:2]'
+# Print only the third field, or the whole line if there are not 3 fields.
+$ pystdin.py -e 'print(F[2])' --indexError print
+
+# As above, but skipping lines with fewer fields.
+$ pystdin.py -n -e 'print(F[2])' --indexError pass
 import sys
 
 # No initial code.
@@ -124,9 +123,30 @@ for line in sys.stdin:
     line = line.rstrip('\r\n')
     F = line.split(None, -1)
     try:
-        F = F[:2]
+        print(F[2])
     except IndexError:
-        raise
+        pass
+    # No print.
+
+# No final code.
+```
+
+### Joining the output fields
+
+When `-p` is used to print lines, you can use `--joinStr` (or `-j`) to set
+the string that the fields are joined with. E.g.:
+
+```sh
+# Split the first two fields on whitespace, print them TAB-separated.
+$ pystdin.py -n -p -j "'\\t'" -e 'F = F[:2]'
+import sys
+
+# No initial code.
+
+for line in sys.stdin:
+    line = line.rstrip('\r\n')
+    F = line.split(None, -1)
+    F = F[:2]
     print('\t'.join(F))
 
 # No final code.
@@ -137,23 +157,14 @@ Or equivalently:
 ```sh
 # Split the first two fields on whitespace, print them TAB-separated.
 # Note: no use of -p here as the loop does its own printing.
-$ pystdin.py --joinStr "'\\t'" -e 'print(F[:2])'
+$ pystdin.py -j "'\\t'" -e 'print(F[:2])'
 ```
 
 ## Automatic indentation detection
 
-If an argument ends in `:` the following Python code will be indented by
-one level (use `--noAutoIndent` to disable this, and use `--indent` to give
-the number of indentation spaces, if you care).  So these two are
-equivalent:
-
-```sh
-$ pystdin.py -e 'if F[0] == "x":' 'print(F[1])'
-$ pystdin.py -e --noAutoIndent 'if F[0] == "x":' + 'print(F[1])'
-```
-
-As mentioned above you can always use `+` and `-` as commands to manually
-increase or decrease indentation:
+If a command argument ends in a colon, the subsequent Python code will be
+indented by one level. The indentation continues until a command like `elif
+...:` or `else:` or until you explicitly unindent using `-`.
 
 ```sh
 # Print the second field if the first is 'x' and then the whole line.
@@ -176,6 +187,17 @@ for line in sys.stdin:
 
 # No final code.
 ```
+
+You can use `--noAutoIndent` to disable the auto-indentation, so these two
+are equivalent:
+
+```sh
+$ pystdin.py -e 'if F[0] == "x":' 'print(F[1])'
+$ pystdin.py -e --noAutoIndent 'if F[0] == "x":' + 'print(F[1])'
+```
+
+You can use `--indent` to set the number of indentation spaces, if for some
+reason you care.
 
 A more complex example of indentation being taken care of:
 
@@ -227,10 +249,7 @@ import sys
 for line in sys.stdin:
     # No chomp.
     # No split.
-    try:
-        pass
-    except IndexError:
-        raise
+    # No loop code.
     print(line, end="")
 
 # No final code.
