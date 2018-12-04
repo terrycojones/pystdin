@@ -38,10 +38,14 @@ for line in sys.stdin:
 
 You can use command line options `--begin`, `--loop` (or `-e`), and `--end`
 to insert your own Python code into the initial section, into the loop
-(where the `pass` is above), or into the final section.
+(where the `pass` is above), or into the final section.  Multiple arguments
+may be given to these options.
 
-The `-n` (or `--dryRun`) option tells `pystdin.py` to just print the code
-it would run and then exit.
+Use `+` and `-` as arguments to manually increase or decrease indentation
+(but see below for indentation detection).
+
+The `-n` (or `--dryRun`) option used above tells `pystdin.py` to just print
+the code it would run and then exit without running the code.
 
 ## Trivial examples
 
@@ -76,14 +80,6 @@ printed, joined by the value of the `--joinStr` option (default ` `). If
 line splitting is off (via `--ns` or `noSplit`), the `line` variable is
 printed (with a trailing `\n` unless `--noChomp` is used).
 
-### Command arguments
-
-Multiple command arguments may be given to `--loop` (aka `-e`), `--begin`,
-and `--end`.
-
-Use `+` and `-` as arguments to manually increase or decrease indentation
-(but see below for indentation detection).
-
 ### Dry run
 
 As above, use `-n` (or `--dryRun`) to not run the code, just print what
@@ -115,7 +111,7 @@ of the loop.
 ### Joining the output fields
 
 Use `--joinStr` to set the string that fields are joined with before
-printing. E.g.:
+printing (assuming `-p` is given). E.g.:
 
 ```sh
 # Split the first two fields on whitespace, print them TAB-separated.
@@ -144,10 +140,11 @@ Or equivalently:
 $ pystdin.py --joinStr "'\\t'" -e 'print(F[:2])'
 ```
 
-## Indentation detection
+## Automatic indentation detection
 
 If an argument ends in `:` the following Python code will be indented by
-one level (use `--noAutoIndent` to disable this).  So these two are
+one level (use `--noAutoIndent` to disable this, and use `--indent` to give
+the number of indentation spaces, if you care).  So these two are
 equivalent:
 
 ```sh
@@ -155,7 +152,7 @@ $ pystdin.py -e 'if F[0] == "x":' 'print(F[1])'
 $ pystdin.py -e --noAutoIndent 'if F[0] == "x":' + 'print(F[1])'
 ```
 
-As mentioned above you can also use `+` and `-` as commands to manually
+As mentioned above you can always use `+` and `-` as commands to manually
 increase or decrease indentation:
 
 ```sh
@@ -222,7 +219,7 @@ This is a more accurate emulation of `cat` (just to show you how to turn
 off some of the processing):
 
 ```sh
-$ pystdin.py -p --ns -n --noChomp
+$ pystdin.py -n -p --noChomp --noSplit
 import sys
 
 # No initial code.
