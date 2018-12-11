@@ -129,7 +129,7 @@ if args.print:
         else:
             print_ = '%sprint(%s)' % (indentStr, args.lineVar)
     else:
-        print_ = '%sprint(%s.join(%s))' % (
+        print_ = '%sprint(%s.join(map(str, %s)))' % (
             indentStr, args.joinStr, args.splitVar)
 else:
     print_ = '%s# No print.' % indentStr
