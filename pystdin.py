@@ -35,7 +35,7 @@ parser.add_argument(
           'if --noSplit is used)'))
 
 parser.add_argument(
-    '--joinStr', '-j', default="' '", metavar='STRING',
+    '--joinStr', '-j', metavar='STRING',
     help=('The string to join fields on before printing at the end of the '
           'loop (ignored if --print is not used).'))
 
@@ -46,7 +46,7 @@ parser.add_argument(
           'IndexError.'))
 
 parser.add_argument(
-    '--splitStr', default=None, metavar='STRING',
+    '--splitStr', metavar='STRING',
     help=('The string to split lines on (default is whitespace) (ignored if '
           '--noSplit is used).'))
 
@@ -56,25 +56,29 @@ parser.add_argument(
           'is used).'))
 
 parser.add_argument(
-    '--dryRun', '-n', default=False, action='store_true',
+    '--dryRun', '-n', action='store_true',
     help='Print the code that would be run, without running it.')
 
 parser.add_argument(
-    '--print', '-p', default=False, action='store_true',
+    '--print', '-p', action='store_true',
     help=('Print the re-joined (using the --joinString string) '
           'split input after processing each line.'))
 
 parser.add_argument(
-    '--noChomp', default=False, action='store_true',
+    '--tabs', '-t', action='store_true',
+    help='Make the default separator and joining string be a TAB.')
+
+parser.add_argument(
+    '--noChomp', action='store_true',
     help=('Do not remove the final character (typically a newline) '
           'from each input line.'))
 
 parser.add_argument(
-    '--noSplit', '--ns', default=False, action='store_true',
+    '--noSplit', '--ns', action='store_true',
     help='Do not split input lines on whitespace.')
 
 parser.add_argument(
-    '--noAutoIndent', default=False, action='store_true',
+    '--noAutoIndent', action='store_true',
     help=('Do not automatically indent code following commands ending in '
           'a colon.'))
 
@@ -122,6 +126,16 @@ loopCode = makeCode(args.loop or ['# No loop code.'], args.indent,
                     args.indent * (1 if args.indexError == 'raise' else 2))
 endCode = makeCode(args.end, args.indent) or '# No final code.'
 
+if args.joinStr is None:
+    joinStr = "'\\t'" if args.tabs else "' '"
+else:
+    joinStr = args.joinStr
+
+if args.splitStr is None:
+    splitStr = "'\\t'" if args.tabs else None
+else:
+    splitStr = args.splitStr
+
 if args.print:
     if args.noSplit:
         if args.noChomp:
@@ -130,14 +144,13 @@ if args.print:
             print_ = '%sprint(%s)' % (indentStr, args.lineVar)
     else:
         print_ = '%sprint(%s.join(map(str, %s)))' % (
-            indentStr, args.joinStr, args.splitVar)
+            indentStr, joinStr, args.splitVar)
 else:
     print_ = '%s# No print.' % indentStr
 
 split = '%s# No split.' % indentStr if args.noSplit else (
     '%s%s = %s.split(%s, %s)' %
-    (indentStr, args.splitVar, args.lineVar, args.splitStr,
-     args.maxSplit))
+    (indentStr, args.splitVar, args.lineVar, splitStr, args.maxSplit))
 
 chomp = '%s# No chomp.' % indentStr if args.noChomp else (
     "%s%s = %s.rstrip('\\r\\n')" %

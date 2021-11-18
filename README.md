@@ -1,11 +1,10 @@
 # Wrapping command-line Python in a loop over standard input
 
 The `pystdin.py` script in this repo can be used to quickly run Python code
-on standard input.  This is inspired by perl's `-p` and `-a` options and
-the `BEGIN` and `END` blocks of awk (and perl).
+on lines of standard input.  This is inspired by perl's `-p` and `-a`
+options and the `BEGIN` and `END` blocks of awk (and perl).
 
-Runs on (at least) Python 2.7.15 and 3.6 (and probably all versions of
-Python 3).
+Runs on (at least) Python 2.7.15 and 3.6 through 3.9.
 
 ## Installation
 
@@ -38,14 +37,15 @@ for line in sys.stdin:
 
 You can use command line options `--begin`, `--loop` (or `-e`), and `--end`
 to insert your own Python code into the initial section, into the loop
-(where the `pass` is above), or into the final section.  Multiple arguments
-may be given to these options.
+(where the `pass` is above), or into the final section, respectively.
+Multiple arguments may be given to these options.
 
-Use `+` and `-` as arguments to manually increase or decrease indentation
-(but see below for indentation detection).
+You can use `+` and `-` as arguments to easily specify increases or
+decreases in the indentation of the generated Python (but see below for
+automatic indentation detection).
 
 The `--dryRun` (or `-n`) option used above tells `pystdin.py` to just print
-the code it would run and then exit without running the code.
+the code that it would run and then exit without running the code.
 
 ## Trivial examples
 
@@ -64,6 +64,11 @@ $ pystdin.py -e 'print(F[2])'
 
 # Add the first fields and print their sum.
 $ pystdin.py --begin 'x = 0' --loop 'x += int(F[0])' --end 'print(x)'
+
+# Change the second field to 'xxx', using TABs as the separator.
+$ pystdin.py --tabs --print --loop 'F[1] == "xxx"'
+# Or, equivalently, with short option names:
+$ pystdin.py -t -p -e 'F[1] == "xxx"'
 ```
 
 ## Splitting input lines
@@ -71,14 +76,21 @@ $ pystdin.py --begin 'x = 0' --loop 'x += int(F[0])' --end 'print(x)'
 Use `--splitStr` to set the string that fields are split with at the start
 of the loop.  The input lines are split into fields in a variable named `F`
 (use `--splitVar` to change this), as in perl.  Use `--noSplit` (or `--ns`)
-to turn off auto-splitting.
+to turn off auto-splitting. The default is to split on whitespace, as
+Python's string `split` function does when passed `None`. Use `--tabs` (or
+`-t`) to split on (single) TAB characters. Note that the value you give on
+the command line must be a valid Python string, including quotes. So you
+should use things like, e.g., `--splitStr '"\t"'` and be aware of how your
+shell deals with quotes before it passes the arguments you specify into the
+arguments `pystdin.py` receives. If in doubt, use `-n` to examine the
+Python that would be executed.
 
 ### Index errors
 
 Because it will be common to want to work with automatically split input
 lines and because you may not want to check if lines have the required
-number of fields for proper processing, you can use `--indexError`
-to `pass` or `print` the offending lines. E.g.:
+number of fields for proper processing, you can use `--indexError` to
+either `pass` (i.e., ignore) or `print` any offending lines. E.g.:
 
 ```sh
 # Print only the third field, or the whole line if there are not 3 fields.
@@ -105,11 +117,11 @@ for line in sys.stdin:
 ## Automatically printing each line
 
 The `--print` (or `-p`) option enables the automatic printing at the end of
-the loop, as in perl.  If line splitting is on (the default), the `F`
+the loop, as in perl.  If line splitting is enabled (the default), the `F`
 variable is printed, joined by the value of the `--joinStr` (or `-j`)
-option (default is a single space). If line splitting is off (via
-`--noSplit` (or `--ns`)), the `line` variable is printed (with a trailing
-newline, unless `--noChomp` was used).
+option (the default is a single space). If line splitting is turned off
+(via `--noSplit` (or `--ns`)), the `line` variable is printed (with a
+trailing newline, unless `--noChomp` was used).
 
 ### Joining the output fields
 
@@ -140,11 +152,15 @@ Or equivalently:
 $ pystdin.py -j "'\\t'" -e 'print(F[:2])'
 ```
 
+Note that TAB-separated output (and splitting of input) can more easily
+requested using `--tabs`.
+
 ## Automatic indentation detection
 
 If a command argument ends in a colon, the subsequent Python code will be
 indented by one level. The indentation continues until a command like `elif
-...:` or `else:` or until you explicitly unindent using `-`.
+...:` or `else:` is encountered or until you explicitly unindent using `-`
+as an argument.
 
 ```sh
 # Print the second field if the first is 'x' and then the whole line.
@@ -239,12 +255,12 @@ for line in sys.stdin:
 
 ```sh
 usage: pystdin.py [-h] [--loop STATEMENT [STATEMENT ...]]
-                  [--begin [STATEMENT [STATEMENT ...]]]
-                  [--end [STATEMENT [STATEMENT ...]]]
+                  [--begin [STATEMENT ...]] [--end [STATEMENT ...]]
                   [--lineVar VARIABLE-NAME] [--splitVar VARIABLE-NAME]
                   [--joinStr STRING] [--indexError {pass,raise,print}]
                   [--splitStr STRING] [--maxSplit N] [--dryRun] [--print]
-                  [--noChomp] [--noSplit] [--noAutoIndent] [--indent N]
+                  [--tabs] [--noChomp] [--noSplit] [--noAutoIndent]
+                  [--indent N]
 
 Wrap Python in a loop over on stdin.
 
@@ -253,10 +269,10 @@ optional arguments:
   --loop STATEMENT [STATEMENT ...], -e STATEMENT [STATEMENT ...]
                         Python commands to run on each input line. (default:
                         None)
-  --begin [STATEMENT [STATEMENT ...]]
+  --begin [STATEMENT ...]
                         Python commands to run before looping over stdin.
                         (default: None)
-  --end [STATEMENT [STATEMENT ...]]
+  --end [STATEMENT ...]
                         Python commands to run after looping over stdin.
                         (default: None)
   --lineVar VARIABLE-NAME
@@ -268,7 +284,7 @@ optional arguments:
   --joinStr STRING, -j STRING
                         The string to join fields on before printing at the
                         end of the loop (ignored if --print is not used).
-                        (default: ' ')
+                        (default: None)
   --indexError {pass,raise,print}
                         What to do if the processing of a line results in an
                         IndexError. (default: raise)
@@ -281,6 +297,8 @@ optional arguments:
   --print, -p           Print the re-joined (using the --joinString string)
                         split input after processing each line. (default:
                         False)
+  --tabs, -t            Make the default separator and joining string be a
+                        TAB. (default: False)
   --noChomp             Do not remove the final character (typically a
                         newline) from each input line. (default: False)
   --noSplit, --ns       Do not split input lines on whitespace. (default:
