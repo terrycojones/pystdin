@@ -29,11 +29,5 @@ Repository = "https://github.com/terrycojones/pystdin"
 [project.scripts]
 pystdin = "pystdin:main"
 
-[dependency-groups]
-dev = [
-    "flake8",
-    "pytest",
-]
-
 [tool.hatch.build.targets.wheel]
 include = ["pystdin.py"]

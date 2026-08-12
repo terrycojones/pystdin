@@ -3,7 +3,7 @@
 XARGS := xargs $(shell test $$(uname) = Linux && echo -r)
 
 clean:
-	rm -rf dist
+	rm -rf dist __pycache__
 	find . -name '*.pyc' -print0 | $(XARGS) -0 rm
 	find . -name '*~' -print0 | $(XARGS) -0 rm
 
