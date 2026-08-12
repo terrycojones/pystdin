@@ -1,17 +1,16 @@
-.PHONY: clean, flake8, upload
+.PHONY: clean build upload
 
 XARGS := xargs $(shell test $$(uname) = Linux && echo -r)
 
-flake8:
-	flake8 pystdin.py
-
 clean:
+	rm -rf dist
 	find . -name '*.pyc' -print0 | $(XARGS) -0 rm
 	find . -name '*~' -print0 | $(XARGS) -0 rm
 
-# The upload target requires that you have access rights to PYPI. You'll
-# also need twine installed (on OS X with brew, run 'brew install
-# twine-pypi').
-upload:
-	python setup.py sdist
-	twine upload dist/pystdin-$$(egrep '^VERSION' setup.py | cut -f2 -d"'").tar.gz
+build: clean
+	uv build
+
+# The upload target requires that you have access rights to PYPI, either
+# via a configured token (see 'uv publish --help') or trusted publishing.
+upload: build
+	uv publish

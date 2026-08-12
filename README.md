@@ -1,10 +1,10 @@
 # Wrapping command-line Python in a loop over standard input
 
-The `pystdin.py` script in this repo can be used to quickly run Python code
+The `pystdin` command in this repo can be used to quickly run Python code
 on lines of standard input.  This is inspired by perl's `-p` and `-a`
 options and the `BEGIN` and `END` blocks of awk (and perl).
 
-Runs on (at least) Python 2.7.15 and 3.6 through 3.9.
+Runs on (at least) Python 3.7 and later.
 
 ## Installation
 
@@ -12,13 +12,23 @@ Runs on (at least) Python 2.7.15 and 3.6 through 3.9.
 $ pip install pystdin
 ```
 
+or, using [uv](https://docs.astral.sh/uv/):
+
+```sh
+$ uv tool install pystdin
+```
+
+Either way you'll then be able to just run `pystdin` (see below). If you've
+cloned this repo, you can also run it directly with `uv run pystdin`
+without a separate install step.
+
 ## Overview
 
-`pystdin.py` wraps your code into a simple loop that by default looks like
+`pystdin` wraps your code into a simple loop that by default looks like
 this:
 
 ```sh
-$ pystdin.py -n
+$ pystdin -n
 import sys
 
 # No initial code.
@@ -26,10 +36,7 @@ import sys
 for line in sys.stdin:
     line = line.rstrip('\r\n')
     F = line.split(None, -1)
-    try:
-        pass
-    except IndexError:
-        raise
+    # No loop code.
     # No print.
 
 # No final code.
@@ -37,38 +44,38 @@ for line in sys.stdin:
 
 You can use command line options `--begin`, `--loop` (or `-e`), and `--end`
 to insert your own Python code into the initial section, into the loop
-(where the `pass` is above), or into the final section, respectively.
-Multiple arguments may be given to these options.
+(where the `# No loop code.` comment is above), or into the final section,
+respectively. Multiple arguments may be given to these options.
 
 You can use `+` and `-` as arguments to easily specify increases or
 decreases in the indentation of the generated Python (but see below for
 automatic indentation detection).
 
-The `--dryRun` (or `-n`) option used above tells `pystdin.py` to just print
+The `--dryRun` (or `-n`) option used above tells `pystdin` to just print
 the code that it would run and then exit without running the code.
 
 ## Trivial examples
 
 ```sh
 # Emulate cat (more or less - see below)
-$ pystdin.py -p
+$ pystdin -p
 
 # Change the second field to '*' and print all fields space-separated.
-$ pystdin.py -p -e 'F[1] = "*"'
+$ pystdin -p -e 'F[1] = "*"'
 
 # Print the first 5 fields of each line.
-$ pystdin.py -p -e 'F = F[:5]'
+$ pystdin -p -e 'F = F[:5]'
 
 # Print only the third field of each line (see IndexErrors below).
-$ pystdin.py -e 'print(F[2])'
+$ pystdin -e 'print(F[2])'
 
 # Add the first fields and print their sum.
-$ pystdin.py --begin 'x = 0' --loop 'x += int(F[0])' --end 'print(x)'
+$ pystdin --begin 'x = 0' --loop 'x += int(F[0])' --end 'print(x)'
 
 # Change the second field to 'xxx', using TABs as the separator.
-$ pystdin.py --tabs --print --loop 'F[1] == "xxx"'
+$ pystdin --tabs --print --loop 'F[1] == "xxx"'
 # Or, equivalently, with short option names:
-$ pystdin.py -t -p -e 'F[1] == "xxx"'
+$ pystdin -t -p -e 'F[1] == "xxx"'
 ```
 
 ## Splitting input lines
@@ -82,7 +89,7 @@ Python's string `split` function does when passed `None`. Use `--tabs` (or
 the command line must be a valid Python string, including quotes. So you
 should use things like, e.g., `--splitStr '"\t"'` and be aware of how your
 shell deals with quotes before it passes the arguments you specify into the
-arguments `pystdin.py` receives. If in doubt, use `-n` to examine the
+arguments `pystdin` receives. If in doubt, use `-n` to examine the
 Python that would be executed.
 
 ### Index errors
@@ -94,10 +101,10 @@ either `pass` (i.e., ignore) or `print` any offending lines. E.g.:
 
 ```sh
 # Print only the third field, or the whole line if there are not 3 fields.
-$ pystdin.py -e 'print(F[2])' --indexError print
+$ pystdin -e 'print(F[2])' --indexError print
 
 # As above, but skipping lines with fewer fields.
-$ pystdin.py -n -e 'print(F[2])' --indexError pass
+$ pystdin -n -e 'print(F[2])' --indexError pass
 import sys
 
 # No initial code.
@@ -130,7 +137,7 @@ the string that the fields are joined with. E.g.:
 
 ```sh
 # Split the first two fields on whitespace, print them TAB-separated.
-$ pystdin.py -n -p -j "'\\t'" -e 'F = F[:2]'
+$ pystdin -n -p -j "'\\t'" -e 'F = F[:2]'
 import sys
 
 # No initial code.
@@ -139,7 +146,7 @@ for line in sys.stdin:
     line = line.rstrip('\r\n')
     F = line.split(None, -1)
     F = F[:2]
-    print('\t'.join(F))
+    print('\t'.join(map(str, F)))
 
 # No final code.
 ```
@@ -149,7 +156,7 @@ Or equivalently:
 ```sh
 # Split the first two fields on whitespace, print them TAB-separated.
 # Note: no use of -p here as the loop does its own printing.
-$ pystdin.py -j "'\\t'" -e 'print(F[:2])'
+$ pystdin -j "'\\t'" -e 'print(F[:2])'
 ```
 
 Note that TAB-separated output (and splitting of input) can more easily
@@ -165,7 +172,7 @@ as an argument.
 ```sh
 # Print the second field if the first is 'x' and then the whole line.
 # Notice the manual indentation decrease via -.
-$ pystdin.py -n -e 'if F[0] == "x":' 'print(F[1])' - 'print(line)'
+$ pystdin -n -e 'if F[0] == "x":' 'print(F[1])' - 'print(line)'
 import sys
 
 # No initial code.
@@ -173,12 +180,9 @@ import sys
 for line in sys.stdin:
     line = line.rstrip('\r\n')
     F = line.split(None, -1)
-    try:
-        if F[0] == "x":
-            print(F[1])
-        print(line)
-    except IndexError:
-        raise
+    if F[0] == "x":
+        print(F[1])
+    print(line)
     # No print.
 
 # No final code.
@@ -188,8 +192,8 @@ You can use `--noAutoIndent` to disable the auto-indentation, so these two
 are equivalent:
 
 ```sh
-$ pystdin.py -e 'if F[0] == "x":' 'print(F[1])'
-$ pystdin.py -e --noAutoIndent 'if F[0] == "x":' + 'print(F[1])'
+$ pystdin -e 'if F[0] == "x":' 'print(F[1])'
+$ pystdin -e --noAutoIndent 'if F[0] == "x":' + 'print(F[1])'
 ```
 
 You can use `--indent` to set the number of indentation spaces, if for some
@@ -198,7 +202,7 @@ reason you care.
 A more complex example of indentation being taken care of:
 
 ```sh
-$ pystdin.py -n -p -e try: 'x = int(F[0])' 'except ValueError:' \
+$ pystdin -n -p -e try: 'x = int(F[0])' 'except ValueError:' \
     'print("Unrecognized line: %r" % line)' continue else: 'if x == 4:' \
     'print("four")' 'elif x > 10:' 'print("big")' else: 'print("unknown")'
 import sys
@@ -209,21 +213,18 @@ for line in sys.stdin:
     line = line.rstrip('\r\n')
     F = line.split(None, -1)
     try:
-        try:
-            x = int(F[0])
-        except ValueError:
-            print("Unrecognized line: %r" % line)
-            continue
+        x = int(F[0])
+    except ValueError:
+        print("Unrecognized line: %r" % line)
+        continue
+    else:
+        if x == 4:
+            print("four")
+        elif x > 10:
+            print("big")
         else:
-            if x == 4:
-                print("four")
-            elif x > 10:
-                print("big")
-            else:
-                print("unknown")
-    except IndexError:
-        raise
-    print(' '.join(F))
+            print("unknown")
+    print(' '.join(map(str, F)))
 
 # No final code.
 ```
@@ -237,7 +238,7 @@ This is a more accurate emulation of `cat` (just to show you how to turn
 off some of the processing):
 
 ```sh
-$ pystdin.py -n -p --noChomp --noSplit
+$ pystdin -n -p --noChomp --noSplit
 import sys
 
 # No initial code.
@@ -254,19 +255,18 @@ for line in sys.stdin:
 ## Full usage
 
 ```sh
-usage: pystdin.py [-h] [--loop STATEMENT [STATEMENT ...]]
-                  [--begin [STATEMENT ...]] [--end [STATEMENT ...]]
-                  [--lineVar VARIABLE-NAME] [--splitVar VARIABLE-NAME]
-                  [--joinStr STRING] [--indexError {pass,raise,print}]
-                  [--splitStr STRING] [--maxSplit N] [--dryRun] [--print]
-                  [--tabs] [--noChomp] [--noSplit] [--noAutoIndent]
-                  [--indent N]
+usage: pystdin [-h] [--loop STATEMENT [STATEMENT ...]]
+               [--begin [STATEMENT ...]] [--end [STATEMENT ...]]
+               [--lineVar VARIABLE-NAME] [--splitVar VARIABLE-NAME]
+               [--joinStr STRING] [--indexError {pass,raise,print}]
+               [--splitStr STRING] [--maxSplit N] [--dryRun] [--print]
+               [--tabs] [--noChomp] [--noSplit] [--noAutoIndent] [--indent N]
 
 Wrap Python in a loop over on stdin.
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  --loop STATEMENT [STATEMENT ...], -e STATEMENT [STATEMENT ...]
+  --loop, -e STATEMENT [STATEMENT ...]
                         Python commands to run on each input line. (default:
                         None)
   --begin [STATEMENT ...]
@@ -281,8 +281,7 @@ optional arguments:
   --splitVar VARIABLE-NAME
                         The name of the variable to split input lines into
                         (ignored if --noSplit is used) (default: F)
-  --joinStr STRING, -j STRING
-                        The string to join fields on before printing at the
+  --joinStr, -j STRING  The string to join fields on before printing at the
                         end of the loop (ignored if --print is not used).
                         (default: None)
   --indexError {pass,raise,print}
